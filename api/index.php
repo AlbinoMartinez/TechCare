@@ -41,6 +41,15 @@ putenv('APP_KEY=' . $appKey);
 $_ENV['APP_KEY'] = $appKey;
 $_SERVER['APP_KEY'] = $appKey;
 
+// Set cache paths to writable /tmp
+putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
+$_ENV['APP_PACKAGES_CACHE'] = '/tmp/bootstrap/cache/packages.php';
+$_SERVER['APP_PACKAGES_CACHE'] = '/tmp/bootstrap/cache/packages.php';
+
+putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
+$_ENV['APP_SERVICES_CACHE'] = '/tmp/bootstrap/cache/services.php';
+$_SERVER['APP_SERVICES_CACHE'] = '/tmp/bootstrap/cache/services.php';
+
 putenv('APP_STORAGE=/tmp/storage');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 putenv('CACHE_STORE=array');
@@ -61,6 +70,12 @@ $_SERVER['CACHE_STORE'] = 'array';
 $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['DB_CONNECTION'] = 'sqlite';
 $_SERVER['DB_DATABASE'] = $targetDb;
+
+// Copy clean packages manifest to /tmp/bootstrap/cache if exists
+$cachedPackages = __DIR__ . '/../bootstrap/cache/packages.php';
+if (file_exists($cachedPackages)) {
+    @copy($cachedPackages, '/tmp/bootstrap/cache/packages.php');
+}
 
 try {
     require __DIR__ . '/../vendor/autoload.php';
