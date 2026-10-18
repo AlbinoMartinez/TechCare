@@ -66,6 +66,8 @@ $_SERVER['CACHE_STORE'] = 'array';
 $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['DB_CONNECTION'] = 'sqlite';
 $_SERVER['DB_DATABASE'] = $targetDb;
+$_SERVER['HTTPS'] = 'on';
+$_SERVER['SERVER_PORT'] = '443';
 
 // Copy clean packages manifest to /tmp/bootstrap/cache if exists
 $cachedPackages = __DIR__ . '/../bootstrap/cache/packages.php';
