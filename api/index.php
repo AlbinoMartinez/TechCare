@@ -1,4 +1,85 @@
 <?php
 
-echo "HELLO FROM API INDEX - RUNTIME IS WORKING";
-exit;
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
+// Ensure /tmp storage directories exist
+$tmpDirs = [
+    '/tmp/storage',
+    '/tmp/storage/app',
+    '/tmp/storage/app/public',
+    '/tmp/storage/framework',
+    '/tmp/storage/framework/cache',
+    '/tmp/storage/framework/cache/data',
+    '/tmp/storage/framework/sessions',
+    '/tmp/storage/framework/views',
+    '/tmp/storage/logs',
+    '/tmp/bootstrap',
+    '/tmp/bootstrap/cache',
+];
+
+foreach ($tmpDirs as $dir) {
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+}
+
+// Prepare SQLite database in /tmp
+$sourceDb = __DIR__ . '/../database/database.sqlite';
+$targetDb = '/tmp/database.sqlite';
+
+if (file_exists($sourceDb) && (!file_exists($targetDb) || filesize($targetDb) === 0)) {
+    @copy($sourceDb, $targetDb);
+} elseif (!file_exists($targetDb)) {
+    @touch($targetDb);
+}
+
+// Fallback APP_KEY if not configured
+$appKey = getenv('APP_KEY') ?: ($_ENV['APP_KEY'] ?? 'base64:hWwUzPlEF/KFGQuFg0WQkPvnvkVLkqQv17r1rHRiKac=');
+putenv('APP_KEY=' . $appKey);
+$_ENV['APP_KEY'] = $appKey;
+$_SERVER['APP_KEY'] = $appKey;
+
+putenv('APP_STORAGE=/tmp/storage');
+putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
+putenv('CACHE_STORE=array');
+putenv('SESSION_DRIVER=cookie');
+putenv('DB_CONNECTION=sqlite');
+putenv('DB_DATABASE=' . $targetDb);
+
+$_ENV['APP_STORAGE'] = '/tmp/storage';
+$_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
+$_ENV['CACHE_STORE'] = 'array';
+$_ENV['SESSION_DRIVER'] = 'cookie';
+$_ENV['DB_CONNECTION'] = 'sqlite';
+$_ENV['DB_DATABASE'] = $targetDb;
+
+$_SERVER['APP_STORAGE'] = '/tmp/storage';
+$_SERVER['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
+$_SERVER['CACHE_STORE'] = 'array';
+$_SERVER['SESSION_DRIVER'] = 'cookie';
+$_SERVER['DB_CONNECTION'] = 'sqlite';
+$_SERVER['DB_DATABASE'] = $targetDb;
+
+try {
+    require __DIR__ . '/../vendor/autoload.php';
+
+    /** @var \Illuminate\Foundation\Application $app */
+    $app = require __DIR__ . '/../bootstrap/app.php';
+
+    $app->useStoragePath('/tmp/storage');
+
+    $request = \Illuminate\Http\Request::capture();
+    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+    $response = $kernel->handle($request);
+    $response->send();
+    $kernel->terminate($request, $response);
+} catch (\Throwable $e) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "DIAGNOSTIC BOOTSTRAP EXCEPTION:\n";
+    echo $e->getMessage() . "\n";
+    echo "At: " . $e->getFile() . ":" . $e->getLine() . "\n\n";
+    echo "Trace:\n" . $e->getTraceAsString();
+}
