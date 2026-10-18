@@ -1,5 +1,9 @@
 <?php
 
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
 // Ensure /tmp storage directories exist
 $tmpDirs = [
     '/tmp/storage',
@@ -75,26 +79,34 @@ if (file_exists($cachedPackages)) {
     @copy($cachedPackages, '/tmp/bootstrap/cache/packages.php');
 }
 
-require __DIR__ . '/../vendor/autoload.php';
+try {
+    require __DIR__ . '/../vendor/autoload.php';
 
-/** @var \Illuminate\Foundation\Application $app */
-$app = require __DIR__ . '/../bootstrap/app.php';
+    /** @var \Illuminate\Foundation\Application $app */
+    $app = require __DIR__ . '/../bootstrap/app.php';
 
-$app->useStoragePath('/tmp/storage');
+    $app->useStoragePath('/tmp/storage');
 
-$bootstrappers = [
-    \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
-    \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
-    \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
-    \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
-    \Illuminate\Foundation\Bootstrap\RegisterProviders::class,
-    \Illuminate\Foundation\Bootstrap\BootProviders::class,
-];
+    $bootstrappers = [
+        \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
+        \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
+        \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
+        \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
+        \Illuminate\Foundation\Bootstrap\RegisterProviders::class,
+        \Illuminate\Foundation\Bootstrap\BootProviders::class,
+    ];
 
-$app->bootstrapWith($bootstrappers);
+    $app->bootstrapWith($bootstrappers);
 
-$request = \Illuminate\Http\Request::capture();
-$kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
-$response = $kernel->handle($request);
-$response->send();
-$kernel->terminate($request, $response);
+    $request = \Illuminate\Http\Request::capture();
+    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+    $response = $kernel->handle($request);
+    $response->send();
+    $kernel->terminate($request, $response);
+} catch (\Throwable $e) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "ERROR: " . $e->getMessage() . "\n";
+    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n\n";
+    echo "Trace:\n" . $e->getTraceAsString();
+}
