@@ -1,21 +1,5 @@
 <?php
 
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
-
-// Catch any fatal shutdown errors
-register_shutdown_function(function () {
-    $error = error_get_last();
-    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        http_response_code(500);
-        header('Content-Type: text/plain');
-        echo "SHUTDOWN FATAL ERROR:\n";
-        echo $error['message'] . "\n";
-        echo "File: " . $error['file'] . ":" . $error['line'] . "\n";
-    }
-});
-
 // 1. Prepare temporary storage directory in /tmp for Vercel Serverless environment
 $tmpDirs = [
     '/tmp/storage',
