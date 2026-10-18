@@ -37,7 +37,12 @@ putenv('APP_KEY=' . $appKey);
 $_ENV['APP_KEY'] = $appKey;
 $_SERVER['APP_KEY'] = $appKey;
 
-// 4. Set environment variables for serverless runtime
+// 4. Temporarily enable debug to diagnose exact 500 error cause
+putenv('APP_DEBUG=true');
+$_ENV['APP_DEBUG'] = 'true';
+$_SERVER['APP_DEBUG'] = 'true';
+
+// 5. Set environment variables for serverless runtime
 putenv('APP_STORAGE=/tmp/storage');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 putenv('CACHE_STORE=array');
@@ -69,5 +74,14 @@ if (file_exists($cachedServices) && !file_exists('/tmp/bootstrap/cache/services.
     @copy($cachedServices, '/tmp/bootstrap/cache/services.php');
 }
 
-// 5. Require Laravel's standard front controller
-require __DIR__ . '/../public/index.php';
+// 6. Wrap in exception catcher to output diagnostic if bootstrap fails
+try {
+    require __DIR__ . '/../public/index.php';
+} catch (\Throwable $e) {
+    http_response_code(500);
+    header('Content-Type: text/plain');
+    echo "DIAGNOSTIC ERROR IN SERVERLESS BOOTSTRAP:\n";
+    echo $e->getMessage() . "\n";
+    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n\n";
+    echo "Trace:\n" . $e->getTraceAsString();
+}
