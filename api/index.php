@@ -1,5 +1,18 @@
 <?php
 
+// Custom error & exception handler to immediately expose serverless errors
+set_exception_handler(function (\Throwable $e) {
+    http_response_code(500);
+    header('Content-Type: text/html; charset=utf-8');
+    echo "<div style='font-family: monospace; padding: 20px; background: #fff0f0; border: 2px solid red;'>";
+    echo "<h2>SERVERLESS BOOTSTRAP EXCEPTION:</h2>";
+    echo "<p style='color: red; font-size: 18px;'><b>" . htmlspecialchars($e->getMessage()) . "</b></p>";
+    echo "<p><b>File:</b> " . htmlspecialchars($e->getFile()) . " : line " . $e->getLine() . "</p>";
+    echo "<hr><pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+    echo "</div>";
+    exit(1);
+});
+
 // 1. Prepare temporary storage directory in /tmp for Vercel Serverless environment
 $tmpDirs = [
     '/tmp/storage',
@@ -74,14 +87,5 @@ if (file_exists($cachedServices) && !file_exists('/tmp/bootstrap/cache/services.
     @copy($cachedServices, '/tmp/bootstrap/cache/services.php');
 }
 
-// 6. Wrap in exception catcher to output diagnostic if bootstrap fails
-try {
-    require __DIR__ . '/../public/index.php';
-} catch (\Throwable $e) {
-    http_response_code(500);
-    header('Content-Type: text/plain');
-    echo "DIAGNOSTIC ERROR IN SERVERLESS BOOTSTRAP:\n";
-    echo $e->getMessage() . "\n";
-    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n\n";
-    echo "Trace:\n" . $e->getTraceAsString();
-}
+// 6. Require Laravel front controller
+require __DIR__ . '/../public/index.php';
