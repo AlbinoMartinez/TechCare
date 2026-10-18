@@ -85,6 +85,30 @@ try {
 
     $app->useStoragePath('/tmp/storage');
 
+    // Run bootstrappers individually to intercept exact failure
+    $bootstrappers = [
+        'LoadEnvironmentVariables' => \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
+        'LoadConfiguration' => \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
+        'HandleExceptions' => \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
+        'RegisterFacades' => \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
+        'RegisterProviders' => \Illuminate\Foundation\Bootstrap\RegisterProviders::class,
+        'BootProviders' => \Illuminate\Foundation\Bootstrap\BootProviders::class,
+    ];
+
+    foreach ($bootstrappers as $name => $bootstrapper) {
+        try {
+            $app->bootstrapWith([$bootstrapper]);
+        } catch (\Throwable $be) {
+            http_response_code(500);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "BOOTSTRAPPER FAILED: {$name}\n";
+            echo "Message: " . $be->getMessage() . "\n";
+            echo "At: " . $be->getFile() . ":" . $be->getLine() . "\n\n";
+            echo "Trace:\n" . $be->getTraceAsString();
+            exit(1);
+        }
+    }
+
     $request = \Illuminate\Http\Request::capture();
     $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
     $response = $kernel->handle($request);
