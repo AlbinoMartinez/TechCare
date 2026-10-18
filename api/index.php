@@ -1,9 +1,5 @@
 <?php
 
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
-
 // Ensure /tmp storage directories exist
 $tmpDirs = [
     '/tmp/storage',
@@ -77,48 +73,26 @@ if (file_exists($cachedPackages)) {
     @copy($cachedPackages, '/tmp/bootstrap/cache/packages.php');
 }
 
-try {
-    require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
-    /** @var \Illuminate\Foundation\Application $app */
-    $app = require __DIR__ . '/../bootstrap/app.php';
+/** @var \Illuminate\Foundation\Application $app */
+$app = require __DIR__ . '/../bootstrap/app.php';
 
-    $app->useStoragePath('/tmp/storage');
+$app->useStoragePath('/tmp/storage');
 
-    // Run bootstrappers individually to intercept exact failure
-    $bootstrappers = [
-        'LoadEnvironmentVariables' => \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
-        'LoadConfiguration' => \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
-        'HandleExceptions' => \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
-        'RegisterFacades' => \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
-        'RegisterProviders' => \Illuminate\Foundation\Bootstrap\RegisterProviders::class,
-        'BootProviders' => \Illuminate\Foundation\Bootstrap\BootProviders::class,
-    ];
+$bootstrappers = [
+    \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
+    \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
+    \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
+    \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
+    \Illuminate\Foundation\Bootstrap\RegisterProviders::class,
+    \Illuminate\Foundation\Bootstrap\BootProviders::class,
+];
 
-    foreach ($bootstrappers as $name => $bootstrapper) {
-        try {
-            $app->bootstrapWith([$bootstrapper]);
-        } catch (\Throwable $be) {
-            http_response_code(500);
-            header('Content-Type: text/plain; charset=utf-8');
-            echo "BOOTSTRAPPER FAILED: {$name}\n";
-            echo "Message: " . $be->getMessage() . "\n";
-            echo "At: " . $be->getFile() . ":" . $be->getLine() . "\n\n";
-            echo "Trace:\n" . $be->getTraceAsString();
-            exit(1);
-        }
-    }
+$app->bootstrapWith($bootstrappers);
 
-    $request = \Illuminate\Http\Request::capture();
-    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
-    $response = $kernel->handle($request);
-    $response->send();
-    $kernel->terminate($request, $response);
-} catch (\Throwable $e) {
-    http_response_code(500);
-    header('Content-Type: text/plain; charset=utf-8');
-    echo "DIAGNOSTIC BOOTSTRAP EXCEPTION:\n";
-    echo $e->getMessage() . "\n";
-    echo "At: " . $e->getFile() . ":" . $e->getLine() . "\n\n";
-    echo "Trace:\n" . $e->getTraceAsString();
-}
+$request = \Illuminate\Http\Request::capture();
+$kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+$response = $kernel->handle($request);
+$response->send();
+$kernel->terminate($request, $response);
