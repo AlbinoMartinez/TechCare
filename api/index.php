@@ -68,6 +68,8 @@ $_SERVER['DB_CONNECTION'] = 'sqlite';
 $_SERVER['DB_DATABASE'] = $targetDb;
 $_SERVER['HTTPS'] = 'on';
 $_SERVER['SERVER_PORT'] = '443';
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/../public/index.php';
 
 // Copy clean packages manifest to /tmp/bootstrap/cache if exists
 $cachedPackages = __DIR__ . '/../bootstrap/cache/packages.php';
