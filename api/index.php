@@ -1,9 +1,5 @@
 <?php
 
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
-
 // Ensure /tmp storage directories exist
 $tmpDirs = [
     '/tmp/storage',
@@ -87,18 +83,9 @@ try {
 
     $app->useStoragePath('/tmp/storage');
 
-    $bootstrappers = [
-        \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
-        \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
-        \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
-        \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
-        \Illuminate\Foundation\Bootstrap\RegisterProviders::class,
-        \Illuminate\Foundation\Bootstrap\BootProviders::class,
-    ];
-
-    $app->bootstrapWith($bootstrappers);
-
     $request = \Illuminate\Http\Request::capture();
+    $app->instance('request', $request);
+
     $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
     $response = $kernel->handle($request);
     $response->send();

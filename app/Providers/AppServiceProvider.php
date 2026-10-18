@@ -20,8 +20,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (config('app.env') === 'production' || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) || isset($_SERVER['VERCEL'])) {
-            URL::forceScheme('https');
+        if (! $this->app->runningInConsole()) {
+            if (config('app.env') === 'production' || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) || isset($_SERVER['VERCEL'])) {
+                URL::forceScheme('https');
+            }
         }
     }
 }
